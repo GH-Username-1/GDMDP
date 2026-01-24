@@ -1,0 +1,3 @@
+[workspace]
+members = ["vault-core", "vault-cli", "vault-gui/src-tauri"]
+resolver = "2"
