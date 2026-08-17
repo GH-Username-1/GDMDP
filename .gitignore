@@ -1,7 +1,11 @@
 # Rust
-/target/
+**/target/
 **/*.rs.bk
 Cargo.lock
+
+# Node / build
+node_modules/
+dist/
 
 # Fichiers de coffre-fort (IMPORTANT: ne jamais commiter!)
 *.dat
