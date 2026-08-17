@@ -73,18 +73,29 @@ pub fn create_vault(
 ) -> CommandResult<String> {
     let path_buf = PathBuf::from(&path);
 
-    if path_buf.exists() {
+    // Convertir en chemin absolu si nécessaire
+    let abs_path = if path_buf.is_absolute() {
+        path_buf
+    } else {
+        match std::env::current_dir() {
+            Ok(cwd) => cwd.join(path_buf),
+            Err(e) => return CommandResult::err(format!("Impossible de déterminer le répertoire courant: {}", e)),
+        }
+    };
+
+    if abs_path.exists() {
         return CommandResult::err("Un coffre existe déjà à cet emplacement".to_string());
     }
 
     let vault = Vault::new();
 
-    match encrypt_vault_to_file(&vault, &path_buf, &master_password) {
+    match encrypt_vault_to_file(&vault, &abs_path, &master_password) {
         Ok(_) => {
+            let path_str = abs_path.to_string_lossy().to_string();
             *state.vault.lock().unwrap() = Some(vault);
-            *state.vault_path.lock().unwrap() = Some(path.clone());
+            *state.vault_path.lock().unwrap() = Some(path_str.clone());
             *state.master_password.lock().unwrap() = Some(master_password);
-            CommandResult::ok(path)
+            CommandResult::ok(path_str)
         }
         Err(e) => CommandResult::err(format!("Erreur lors de la création: {}", e)),
     }
@@ -99,11 +110,21 @@ pub fn open_vault(
 ) -> CommandResult<Vec<SerializableEntry>> {
     let path_buf = PathBuf::from(&path);
 
-    if !path_buf.exists() {
+    // Convertir en chemin absolu si nécessaire
+    let abs_path = if path_buf.is_absolute() {
+        path_buf
+    } else {
+        match std::env::current_dir() {
+            Ok(cwd) => cwd.join(path_buf),
+            Err(e) => return CommandResult::err(format!("Impossible de déterminer le répertoire courant: {}", e)),
+        }
+    };
+
+    if !abs_path.exists() {
         return CommandResult::err("Le fichier de coffre n'existe pas".to_string());
     }
 
-    match decrypt_vault_from_file(&path_buf, &master_password) {
+    match decrypt_vault_from_file(&abs_path, &master_password) {
         Ok(vault) => {
             let entries: Vec<SerializableEntry> = vault
                 .list_entries()
@@ -111,8 +132,9 @@ pub fn open_vault(
                 .map(SerializableEntry::from)
                 .collect();
 
+            let path_str = abs_path.to_string_lossy().to_string();
             *state.vault.lock().unwrap() = Some(vault);
-            *state.vault_path.lock().unwrap() = Some(path);
+            *state.vault_path.lock().unwrap() = Some(path_str);
             *state.master_password.lock().unwrap() = Some(master_password);
 
             CommandResult::ok(entries)

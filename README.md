@@ -222,14 +222,25 @@ vault gen \
 ### Sauvegardes
 
 ```bash
-# Backup manuel (garde 5 backups par défaut)
+# Backup manuel (garde 10 backups par défaut)
 vault backup
 
-# Garde 10 backups
-vault backup --keep 10
+# Personnaliser le nombre de backups conservés
+vault backup --keep 5
 ```
 
-**Note** : Les backups sont créés automatiquement avant chaque modification (add, update, delete).
+**Fonctionnement :**
+- **Backups automatiques** : Créés avant chaque modification (add, update, delete), garde les 5 derniers
+- **Backups manuels** : Créés avec la commande `backup`, garde les 10 derniers par défaut
+- **Emplacement** : Dans le même dossier que votre coffre
+- **Format** : `vault.AAAAMMJJ_HHMMSS.bak` (ex: `vault.20260131_185921.bak`)
+- **Rotation** : Les plus anciens sont supprimés automatiquement selon la limite configurée
+
+**Restaurer un backup :**
+```bash
+# Méthode simple : renommer le fichier .bak en .dat
+cp vault.20260131_185921.bak vault.dat
+```
 
 ## Sécurité
 
